@@ -69,7 +69,7 @@ def main():
 
 
     # ---------------Create the generator---------------
-    netG = Generator(ngpu, nz,nc, ngf).to(device)
+    netG = Generator(ngpu, nz,nc).to(device)
     # handle multi-gpu if desired
     if (device.type == 'cuda') and (ngpu > 1):
         netG = nn.DataParallel(netG, list(range(ngpu)))
@@ -81,7 +81,7 @@ def main():
     #-----------------end Generator-------------------
 
     #------------------create discriminator-----------------
-    netD = Discriminator(ngpu, nc, ndf).to(device)
+    netD = Discriminator(ngpu, nc).to(device)
     # handle multi-gpu if desired
     if (device.type == 'cuda') and (ngpu > 1):
         netD = nn.DataParallel(netD, list(range(ngpu)))
