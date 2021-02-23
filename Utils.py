@@ -6,7 +6,7 @@ import numpy as np
 import torchvision.utils as vutils
 
 class Utils(object):
-    def prepare_data(self, dataroot, image_size, batch_size, workers, dataset='cifar'):
+    def prepare_data(self, dataroot, batch_size, workers, dataset='cifar'):
 
         trans = transforms.Compose([
             transforms.Resize(32),
