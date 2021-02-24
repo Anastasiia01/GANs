@@ -1,5 +1,22 @@
 import torch.nn as nn
 
+
+class DenseGenerator(nn.Module):
+    def __init__(self, ngpu=1):
+        super(DenseGenerator, self).__init__()
+        self.ngpu = ngpu
+        self.main = nn.Sequential(
+            nn.Linear(100, 256),
+            nn.LeakyReLU(0.2),
+            nn.Linear(256, 512),
+            nn.LeakyReLU(0.2),
+            nn.Linear(512, 1024),# 32 x 32 = 1024
+            nn.LeakyReLU(0.2),
+            nn.Tanh())
+        
+    def forward(self, input):
+        return self.main(input)
+
 class Generator(nn.Module):
     def __init__(self, ngpu, latent_space_z = 100, channels=3):
         super(Generator, self).__init__()

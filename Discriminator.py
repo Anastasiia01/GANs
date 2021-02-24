@@ -1,5 +1,20 @@
 import torch.nn as nn
 
+
+class DenseDiscriminator(nn.Module):
+    def __init__(self, ngpu=1):
+        super(DenseDiscriminator, self).__init__()
+        self.ngpu = ngpu
+        self.main = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(0.2),
+            nn.Linear(512, 256),
+            nn.LeakyReLU(0.2),
+            nn.Linear(256, 1),
+            nn.Sigmoid())
+
+    def forward(self, input):
+        return self.main(input)
 class Discriminator(nn.Module):
     def __init__(self, ngpu, channels):
         super(Discriminator, self).__init__()
