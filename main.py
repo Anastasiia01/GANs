@@ -53,8 +53,9 @@ def main(args):
     workers = 0  # number of workers for dataloader, 2 creates problems
     train_loader, test_loader = utils.prepare_data(dataroot, batch_size, workers, dataset)
     # Start model training
+    resume_training = args.resume_training
     if args.is_train == 'True':
-        model.train(train_loader)
+        model.train(train_loader, resume_training)
 
     # start evaluating on test data
     else:
