@@ -3,7 +3,7 @@ import time
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from logger import Logger
+from tensorboard_logger import Logger
 #from torch.utils.tensorboard import SummaryWriter
 from Discriminator import DenseDiscriminator
 from Generator import DenseGenerator
@@ -30,9 +30,17 @@ class GAN(object):
         self.batch_size = _batch_size
 
     
-    def train(self, train_loader): 
+    def train(self, train_loader, resume_training = True): 
         self.t_begin = time.time()
         generator_iter = 0
+
+        if resume_training:
+            try:
+                self.load_model()
+            except Exception:
+                print("Failed to load model. Training from scratch")
+        else:
+            print("Training from scratch")
 
         for epoch in range(self.epochs+1):
             for i, (images, _) in enumerate(train_loader):
@@ -41,17 +49,14 @@ class GAN(object):
                     break
 
                 # Flatten image 1,32x32 to 1024
-                images = images.view(self.batch_size, -1)
-                z = torch.rand((self.batch_size, 100))
+                images = images.view(self.batch_size, -1) #get images
+                z = torch.rand((self.batch_size, 100)) #get z
 
-                if self.cuda:
-                    real_labels = Variable(torch.ones(self.batch_size)).cuda(self.cuda_index)
-                    fake_labels = Variable(torch.zeros(self.batch_size)).cuda(self.cuda_index)
-                    images, z = Variable(images.cuda(self.cuda_index)), Variable(z.cuda(self.cuda_index))
-                else:
-                    real_labels = Variable(torch.ones(self.batch_size))
-                    fake_labels = Variable(torch.zeros(self.batch_size))
-                    images, z = Variable(images), Variable(z)
+                real_labels = Variable(torch.ones(self.batch_size, device = self.device))
+                fake_labels = Variable(torch.zeros(self.batch_size, device = self.device))
+                images, z = Variable(images), Variable(z)
+                images = images.to(self.device)
+                z = z.to(self.device)
 
                 # Train discriminator
                 # compute BCE_Loss using real images where BCE_Loss(x, y): - y * log(D(x)) - (1-y) * log(1 - D(x))
@@ -73,10 +78,7 @@ class GAN(object):
                 self.d_optimizer.step()
 
                 # Train generator
-                if self.cuda:
-                    z = Variable(torch.randn(self.batch_size, 100).cuda(self.cuda_index))
-                else:
-                    z = Variable(torch.randn(self.batch_size, 100))
+                z = Variable(torch.randn(self.batch_size, 100))
                 fake_images = self.G(z)
                 outputs = self.D(fake_images)
 
@@ -97,7 +99,7 @@ class GAN(object):
                     print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
                           ((epoch + 1), (i + 1), train_loader.dataset.__len__() // self.batch_size, d_loss.data, g_loss.data))
 
-                    z = Variable(torch.randn(self.batch_size, 100).cuda(self.cuda_index))
+                    z = Variable(torch.randn(self.batch_size, 100)).to(self.device)
 
                     # ============ TensorBoard logging ============#
                     # (1) Log the scalar values
@@ -133,7 +135,7 @@ class GAN(object):
                         os.makedirs('training_result_images/')
 
                     # Denormalize images and save them in grid 8x8
-                    z = Variable(torch.randn(self.batch_size, 100)).cuda(self.cuda_index)
+                    z = Variable(torch.randn(self.batch_size, 100)).to(self.device)
                     samples = self.G(z)
                     samples = samples.mul(0.5).add(0.5)
                     samples = samples.data.cpu()
@@ -146,7 +148,7 @@ class GAN(object):
         # Save the trained parameters
         self.save_model()
 
-    def evaluate(self, test_loader, D_model_path, G_model_path): # CONTINUE HERE
+    def evaluate(self, test_loader, D_model_path, G_model_path): 
         self.load_model(D_model_path, G_model_path)
         z = Variable(torch.randn(self.batch_size, 100)).cuda(self.cuda_index)
         samples = self.G(z)
@@ -171,7 +173,7 @@ class GAN(object):
         torch.save(self.D.state_dict(), './discriminator.pkl')
         print('Models save to ./generator.pkl & ./discriminator.pkl ')
 
-    def load_model(self, D_model_filename, G_model_filename):
+    def load_model(self, D_model_filename = './generator.pkl', G_model_filename = './discriminator.pkl'):
         D_model_path = os.path.join(os.getcwd(), D_model_filename)
         G_model_path = os.path.join(os.getcwd(), G_model_filename)
         self.D.load_state_dict(torch.load(D_model_path))
