@@ -16,9 +16,9 @@ from Utils import Utils
 from config import parse_args
 
 from models.gan import GAN
-from models.dcgan import DCGAN_MODEL
-from models.wgan_clipping import WGAN_CP
-from models.wgan_gradient_penalty import WGAN_GP
+#from models.dcgan import DCGAN_MODEL
+#from models.wgan_clipping import WGAN_CP
+#from models.wgan_gradient_penalty import WGAN_GP
 
 # Reference: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
 # Set random seed for reproducibility
@@ -32,9 +32,17 @@ torch.manual_seed(manualSeed)
 
 def main(args):
     #--------------prepare data------------------------
+    dataset = args.dataset
+    dataroot = args.dataroot
+    if not os.path.exists(dataroot):
+        os.makedirs(dataroot)
+    batch_size = args.batch_size 
+    epochs = args.epochs
+    channels = args.channels
     model = None
+    model_name = args.model
     if args.model == 'GAN':
-        model = GAN(args)
+        model = GAN(epochs, batch_size)
     elif args.model == 'DCGAN':
         model = DCGAN_MODEL(args)
     elif args.model == 'WGAN-CP':
@@ -44,14 +52,9 @@ def main(args):
     else:
         print("Model type non-existing. Try again.")
         exit(-1)
-    utils = Utils()
-    dataset = args.dataset
-    dataroot = args.dataroot
-    batch_size = args.batch_size 
-    epochs = args.epochs
-    channels = args.channels
     workers = 0  # number of workers for dataloader, 2 creates problems
-    train_loader, test_loader = utils.prepare_data(dataroot, batch_size, workers, dataset)
+    utils = Utils()
+    train_loader, test_loader = utils.prepare_data(dataroot, batch_size, workers, dataset, model_name)
     # Start model training
     resume_training = args.resume_training
     if args.is_train == 'True':

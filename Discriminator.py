@@ -15,6 +15,7 @@ class DenseDiscriminator(nn.Module):
 
     def forward(self, input):
         return self.main(input)
+        
 class Discriminator(nn.Module):
     def __init__(self, ngpu, channels):
         super(Discriminator, self).__init__()

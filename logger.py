@@ -9,5 +9,8 @@ class Logger(object):
     def log_loss(self, tag, loss, iteration):
         self.writer.add_scalar(tag, loss, iteration)
 
+    def save_images(self):
+        x=2
+
     def close(self):
         self.writer.close()

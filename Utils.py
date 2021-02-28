@@ -6,19 +6,25 @@ import numpy as np
 import torchvision.utils as vutils
 
 class Utils(object):
-    def prepare_data(self, dataroot, batch_size, workers, dataset='cifar'):
+    def prepare_data(self, dataroot, batch_size, workers, dataset, model_name, channels=1):
 
         trans = transforms.Compose([
             transforms.Resize(32),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.Normalize((0.5,) * channels, (0.5,) * channels),
         ])
 
         if(dataset=='cifar'):
-            trans = transforms.Compose([
+            #print("cif")
+            trans = [
                 transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-            ])
+                transforms.Normalize((0.5,) * channels, (0.5,) * channels),
+            ]
+            #print("model", model_name, "model")
+            if(model_name=='GAN'):
+                print("here")
+                trans=[transforms.Grayscale()]+trans
+            trans = transforms.Compose(trans)
             train_dataset = dset.CIFAR10(root=dataroot, train=True, download=True, transform=trans)
             test_dataset = dset.CIFAR10(root=dataroot, train=False, download=True, transform=trans)
         elif(dataset=='mnist'):

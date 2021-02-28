@@ -3,7 +3,7 @@ import time
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from tensorboard_logger import Logger
+from logger import Logger
 #from torch.utils.tensorboard import SummaryWriter
 from Discriminator import DenseDiscriminator
 from Generator import DenseGenerator
@@ -47,7 +47,7 @@ class GAN(object):
                 # Check if round number of batches
                 if i == train_loader.dataset.__len__() // self.batch_size:
                     break
-
+                #print(images.size())
                 # Flatten image 1,32x32 to 1024
                 images = images.view(self.batch_size, -1) #get images
                 z = torch.rand((self.batch_size, 100)) #get z
@@ -61,13 +61,16 @@ class GAN(object):
                 # Train discriminator
                 # compute BCE_Loss using real images where BCE_Loss(x, y): - y * log(D(x)) - (1-y) * log(1 - D(x))
                 # [Training discriminator = Maximizing discriminator being correct]
-                outputs = self.D(images)
+                #print("Before outputs", images.size())
+                outputs = self.D(images).view(-1)
+                #print("Outputs:", outputs.size())
+                #print("Real_labels:", real_labels.size())
                 d_loss_real = self.loss(outputs, real_labels)
                 real_score = outputs
 
                 # Compute BCELoss using fake images
                 fake_images = self.G(z)
-                outputs = self.D(fake_images)
+                outputs = self.D(fake_images).view(-1)
                 d_loss_fake = self.loss(outputs, fake_labels)
                 fake_score = outputs
 
@@ -78,9 +81,9 @@ class GAN(object):
                 self.d_optimizer.step()
 
                 # Train generator
-                z = Variable(torch.randn(self.batch_size, 100))
+                z = Variable(torch.randn(self.batch_size, 100)).to(self.device)
                 fake_images = self.G(z)
-                outputs = self.D(fake_images)
+                outputs = self.D(fake_images).view(-1)
 
                 # We train G to maximize log(D(G(z))[maximize likelihood of discriminator being wrong] instead of
                 # minimizing log(1-D(G(z)))[minizing likelihood of discriminator being correct]
@@ -109,22 +112,18 @@ class GAN(object):
                     }
 
                     for tag, value in info.items():
-                        self.logger.scalar_summary(tag, value, i + 1)
+                        self.logger.log_loss(tag, value, i + 1)
+                        #self.logger.scalar_summary(tag, value, i + 1)
 
-                    # (2) Log values and gradients of the parameters (histogram)
-                    for tag, value in self.D.named_parameters():
-                        tag = tag.replace('.', '/')
-                        self.logger.histo_summary(tag, self.to_np(value), i + 1)
-                        self.logger.histo_summary(tag + '/grad', self.to_np(value.grad), i + 1)
-
-                    # (3) Log the images
+                    # (2) Log the images FIX saving images
                     info = {
                         'real_images': self.to_np(images.view(-1, 32, 32)[:self.number_of_images]),
                         'generated_images': self.generate_img(z, self.number_of_images)
                     }
 
                     for tag, images in info.items():
-                        self.logger.image_summary(tag, images, i + 1)
+                        #self.logger.image_summary(tag, images, i + 1)
+                        x=2
 
 
                 if generator_iter % 1000 == 0:
@@ -140,8 +139,8 @@ class GAN(object):
                     samples = samples.mul(0.5).add(0.5)
                     samples = samples.data.cpu()
                     grid = utils.make_grid(samples)
-                    utils.save_image(grid, 'training_result_images/gan_image_iter_{}.png'.format(
-                        str(generator_iter).zfill(3)))
+                    #utils.save_image(grid, 'training_result_images/gan_image_iter_{}.png'.format(
+                        #str(generator_iter).zfill(3)))
 
         self.t_end = time.time()
         print('Time of training-{}'.format((self.t_end - self.t_begin)))
