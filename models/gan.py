@@ -3,6 +3,9 @@ import time
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import torchvision.utils as vutils
+import matplotlib.pyplot as plt
+import numpy as np
 from logger import Logger
 #from torch.utils.tensorboard import SummaryWriter
 from Discriminator import DenseDiscriminator
@@ -37,7 +40,8 @@ class GAN(object):
         if resume_training:
             try:
                 self.load_model()
-            except Exception:
+            except Exception as e:
+                print(e)
                 print("Failed to load model. Training from scratch")
         else:
             print("Training from scratch")
@@ -115,18 +119,8 @@ class GAN(object):
                         self.logger.log_loss(tag, value, i + 1)
                         #self.logger.scalar_summary(tag, value, i + 1)
 
-                    # (2) Log the images FIX saving images
-                    info = {
-                        'real_images': self.to_np(images.view(-1, 32, 32)[:self.number_of_images]),
-                        'generated_images': self.generate_img(z, self.number_of_images)
-                    }
-
-                    for tag, images in info.items():
-                        #self.logger.image_summary(tag, images, i + 1)
-                        x=2
-
-
                 if generator_iter % 1000 == 0:
+                    print("Imag size", images.size())
                     print('Generator iter-{}'.format(generator_iter))
                     self.save_model()
 
@@ -138,9 +132,32 @@ class GAN(object):
                     samples = self.G(z)
                     samples = samples.mul(0.5).add(0.5)
                     samples = samples.data.cpu()
-                    grid = utils.make_grid(samples)
-                    #utils.save_image(grid, 'training_result_images/gan_image_iter_{}.png'.format(
-                        #str(generator_iter).zfill(3)))
+                    print("Sampl size", samples.size())                  
+                    samples = samples.view(self.batch_size, 1, 32, 32)
+                    print("Sampl size2", samples.size())
+                    grid = vutils.make_grid(samples)
+                    image_path = 'training_result_images/gan_image_iter_{}.png'.format( 
+                      str(generator_iter).zfill(3))
+                    vutils.save_image(grid, image_path)
+                            
+        # Plot the real images
+        plt.figure(figsize=(8,8))
+        plt.axis("off")
+        #plt.title("Real Images")
+        plt.imshow(np.transpose(vutils.make_grid(images.to(self.device), normalize=True).cpu(),(1,2,0)))
+        plt.savefig('training_result_images/real_img.png')
+
+        # ---------Plot the fake images from the last epoch
+        z = Variable(torch.randn(self.batch_size, 100)).to(self.device)
+        samples = self.G(z)
+        samples = samples.mul(0.5).add(0.5)
+        samples = samples.data.cpu()
+        print("Sampl size", samples.size())                  
+        samples = samples.view(self.batch_size, 1, 32, 32)
+        print("Sampl size2", samples.size())
+        grid = vutils.make_grid(samples)
+        image_path = 'training_result_images/gan_img.png'
+        vutils.save_image(grid, image_path)
 
         self.t_end = time.time()
         print('Time of training-{}'.format((self.t_end - self.t_begin)))
@@ -149,7 +166,7 @@ class GAN(object):
 
     def evaluate(self, test_loader, D_model_path, G_model_path): 
         self.load_model(D_model_path, G_model_path)
-        z = Variable(torch.randn(self.batch_size, 100)).cuda(self.cuda_index)
+        z = Variable(torch.randn(self.batch_size, 100)).to(self.device)
         samples = self.G(z)
         samples = samples.mul(0.5).add(0.5)
         samples = samples.data.cpu()
@@ -172,7 +189,7 @@ class GAN(object):
         torch.save(self.D.state_dict(), './discriminator.pkl')
         print('Models save to ./generator.pkl & ./discriminator.pkl ')
 
-    def load_model(self, D_model_filename = './generator.pkl', G_model_filename = './discriminator.pkl'):
+    def load_model(self, D_model_filename = './discriminator.pkl', G_model_filename = './generator.pkl'):
         D_model_path = os.path.join(os.getcwd(), D_model_filename)
         G_model_path = os.path.join(os.getcwd(), G_model_filename)
         self.D.load_state_dict(torch.load(D_model_path))
