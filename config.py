@@ -13,7 +13,7 @@ def parse_args():
     #parser.add_argument('--download', type=str, default='True')
     parser.add_argument('--epochs', type=int, default=50, help='The number of epochs to run')
     parser.add_argument('--batch_size', type=int, default=64, help='The size of batch')
-    parser.add_argument('--resume_training', type=bool, default=False, help='Whether to resume training or not')
+    parser.add_argument('--resume_training', type=str, default='False', help='Whether to resume training or not')
     
     # ! below args not parsed in main yet !
     """parser.add_argument('--load_D', type=str, default='False', help='Path for loading Discriminator network')

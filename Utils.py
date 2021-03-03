@@ -6,7 +6,7 @@ import numpy as np
 import torchvision.utils as vutils
 
 class Utils(object):
-    def prepare_data(self, dataroot, batch_size, workers, dataset, model_name, channels=1):
+    def prepare_data(self, dataroot, batch_size, workers, dataset, model_name, channels):
 
         trans = transforms.Compose([
             transforms.Resize(32),
@@ -15,15 +15,13 @@ class Utils(object):
         ])
 
         if(dataset=='cifar'):
-            #print("cif")
-            trans = [
+            if(model_name=='GAN'):
+                trans=[transforms.Grayscale()]
+                channels = 1
+            trans = trans + [
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,) * channels, (0.5,) * channels),
             ]
-            #print("model", model_name, "model")
-            if(model_name=='GAN'):
-                print("here")
-                trans=[transforms.Grayscale()]+trans
             trans = transforms.Compose(trans)
             train_dataset = dset.CIFAR10(root=dataroot, train=True, download=True, transform=trans)
             test_dataset = dset.CIFAR10(root=dataroot, train=False, download=True, transform=trans)
@@ -31,8 +29,8 @@ class Utils(object):
             train_dataset = dset.MNIST(root=dataroot, train=True, download=True, transform=trans)
             test_dataset = dset.MNIST(root=dataroot, train=False, download=True, transform=trans)
         elif(dataset=='fashion-mnist'):
-            train_dataset = dset.MNIST(root=dataroot, train=True, download=True, transform=trans)
-            test_dataset = dset.MNIST(root=dataroot, train=False, download=True, transform=trans)            
+            train_dataset = dset.FashionMNIST(root=dataroot, train=True, download=True, transform=trans)
+            test_dataset = dset.FashionMNIST(root=dataroot, train=False, download=True, transform=trans)            
         else:
             raise Exception("Invalid dataset option.")
         # Create the dataloader

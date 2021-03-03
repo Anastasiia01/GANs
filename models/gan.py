@@ -33,7 +33,7 @@ class GAN(object):
         self.batch_size = _batch_size
 
     
-    def train(self, train_loader, resume_training = True): 
+    def train(self, train_loader, resume_training = False): 
         self.t_begin = time.time()
         generator_iter = 0
 
@@ -126,6 +126,12 @@ class GAN(object):
 
                     if not os.path.exists('training_result_images/'):
                         os.makedirs('training_result_images/')
+                    
+
+                    """images_display = images.view(64, 1, 32, 32)
+                    grid = vutils.make_grid(images_display, normalize=True).cpu()
+                    vutils.save_image(grid, 'training_result_images/real_image_iter_{}.png'.format( 
+                      str(generator_iter).zfill(3)))"""
 
                     # Denormalize images and save them in grid 8x8
                     z = Variable(torch.randn(self.batch_size, 100)).to(self.device)

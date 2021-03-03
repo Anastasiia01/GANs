@@ -54,9 +54,11 @@ def main(args):
         exit(-1)
     workers = 0  # number of workers for dataloader, 2 creates problems
     utils = Utils()
-    train_loader, test_loader = utils.prepare_data(dataroot, batch_size, workers, dataset, model_name)
+    train_loader, test_loader = utils.prepare_data(dataroot, batch_size, workers, dataset, model_name, channels)
     # Start model training
-    resume_training = args.resume_training
+    resume_training = False
+    if args.resume_training == 'True':
+        resume_training = True
     if args.is_train == 'True':
         model.train(train_loader, resume_training)
 
